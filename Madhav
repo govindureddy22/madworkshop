@@ -1,0 +1,64 @@
+trigger:
+- main  # Replace with your branch or tag trigger
+
+pr:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: 'your_variable_group'  # Create a variable group in ADO for secrets
+
+stages:
+- stage: Test
+  jobs:
+  - job: BuildAndDeployTest
+    displayName: 'Build and Deploy to Test AKS'
+    steps:
+    - checkout: self
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '3.1.x'  # Replace with your desired .NET version
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+    - script: |
+        # Your build commands go here
+        dotnet build -c Release
+      displayName: 'Build Application'
+    - script: |
+        # Log in to Azure
+        az login --service-principal -u $(servicePrincipalId) -p $(servicePrincipalKey) --tenant $(35911f14-30fa-4811-83e1-2fb3e91b0b08)
+
+        # Select the correct subscription
+        az account set --subscription $(12ed2b47-dbc4-4fb2-a1b9-8799fea71b54)
+
+        # Your AKS deployment commands go here (replace with your namespace and other details)
+        kubectl apply -f ./kubernetes-manifests/test/  # Adjust as needed
+      displayName: 'Deploy to Test AKS'
+
+- stage: Prod
+  jobs:
+  - job: BuildAndDeployProd
+    displayName: 'Build and Deploy to Prod AKS'
+    steps:
+    - checkout: self
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '3.1.x'  # Replace with your desired .NET version
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+    - script: |
+        # Your build commands go here
+        dotnet build -c Release
+      displayName: 'Build Application'
+    - script: |
+        # Log in to Azure
+        az login --service-principal -u $(servicePrincipalId) -p $(servicePrincipalKey) --tenant $(35911f14-30fa-4811-83e1-2fb3e91b0b08)
+
+        # Select the correct subscription
+        az account set --subscription $(12ed2b47-dbc4-4fb2-a1b9-8799fea71b54)
+
+        # Your AKS deployment commands go here (replace with your namespace and other details)
+        kubectl apply -f ./kubernetes-manifests/prod/  # Adjust as needed
+      displayName: 'Deploy to Prod AKS'
